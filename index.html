@@ -4,9 +4,851 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>欢迎页</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.19.6/babel.min.js"></script>
+    
+    <!-- Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36D399',
+                        neutral: {
+                            100: '#F3F4F6',
+                            200: '#E5E7EB',
+                            300: '#D1D5DB',
+                            400: '#9CA3AF',
+                            500: '#6B7280',
+                            600: '#4B5563',
+                            700: '#374151',
+                            800: '#1F2937',
+                            900: '#111827',
+                        }
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <!-- 自定义工具类 -->
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .transition-custom {
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+        }
+    </style>
 </head>
-<body>
-    <div id="root"></div>
-    <script src="src/main.jsx" type="module"></script>
+<body class="font-inter bg-neutral-100 text-neutral-800 min-h-screen flex flex-col">
+    <!-- 页面加载指示器 -->
+    <div id="loader" class="fixed inset-0 z-50 flex items-center justify-center bg-white">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-primary border-opacity-75"></div>
+    </div>
+
+    <!-- 应用容器 -->
+    <div id="root" class="flex-grow"></div>
+
+    <script type="text/babel" data-type="module">
+        // 注册Babel插件
+        Babel.registerPlugin('transform-react-jsx', function(babel) {
+            const t = babel.types;
+            return {
+                visitor: {
+                    JSXElement(path) {
+                        // 转换JSX元素
+                    }
+                }
+            };
+        });
+
+        // 模拟@/lib/axios的axios实例
+        const axios = {
+            create: () => ({
+                get: (url) => {
+                    console.log(`模拟请求: ${url}`);
+                    return Promise.resolve({ data: [] });
+                },
+                post: (url, data) => {
+                    console.log(`模拟请求: ${url}, 数据:`, data);
+                    return Promise.resolve({ data: { success: true } });
+                }
+            })
+        };
+
+        // 模拟@/lib/utils
+        const utils = {
+            formatDate: (date) => new Date(date).toLocaleDateString(),
+            debounce: (func, delay) => {
+                let timeout;
+                return (...args) => {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func(...args), delay);
+                };
+            }
+        };
+
+        // 模拟@/lib/context
+        const AuthContext = React.createContext({
+            user: null,
+            login: () => {},
+            logout: () => {}
+        });
+
+        // 导航栏组件
+        const Navbar = () => {
+            const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+            
+            return (
+                <nav className="bg-white shadow-md fixed w-full z-40 transition-all duration-300" id="navbar">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="flex justify-between h-16">
+                            <div className="flex items-center">
+                                <div className="flex-shrink-0 flex items-center">
+                                    <i className="fa fa-cube text-primary text-2xl mr-2"></i>
+                                    <span className="font-bold text-xl text-neutral-800">应用名称</span>
+                                </div>
+                                <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+                                    <a href="#" className="border-primary text-primary border-b-2 px-1 pt-1 inline-flex items-center text-sm font-medium">
+                                        <i className="fa fa-home mr-1"></i> 首页
+                                    </a>
+                                    <a href="#" className="border-transparent text-neutral-600 hover:text-neutral-800 hover:border-neutral-300 border-b-2 px-1 pt-1 inline-flex items-center text-sm font-medium transition-custom">
+                                        <i className="fa fa-th-large mr-1"></i> 产品
+                                    </a>
+                                    <a href="#" className="border-transparent text-neutral-600 hover:text-neutral-800 hover:border-neutral-300 border-b-2 px-1 pt-1 inline-flex items-center text-sm font-medium transition-custom">
+                                        <i className="fa fa-file-text-o mr-1"></i> 文档
+                                    </a>
+                                    <a href="#" className="border-transparent text-neutral-600 hover:text-neutral-800 hover:border-neutral-300 border-b-2 px-1 pt-1 inline-flex items-center text-sm font-medium transition-custom">
+                                        <i className="fa fa-comments-o mr-1"></i> 社区
+                                    </a>
+                                </div>
+                            </div>
+                            <div className="flex items-center">
+                                <button type="button" className="p-2 rounded-full text-neutral-600 hover:text-primary hover:bg-neutral-100 focus:outline-none">
+                                    <i className="fa fa-search"></i>
+                                </button>
+                                <button type="button" className="ml-4 p-2 rounded-full text-neutral-600 hover:text-primary hover:bg-neutral-100 focus:outline-none">
+                                    <i className="fa fa-bell"></i>
+                                </button>
+                                <div className="ml-3 relative">
+                                    <div>
+                                        <button type="button" className="flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" id="user-menu-button">
+                                            <img className="h-8 w-8 rounded-full object-cover" src="https://picsum.photos/id/64/200/200" alt="用户头像" />
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="ml-4 flex items-center sm:ml-6">
+                                    <button type="button" className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-custom">
+                                        <i className="fa fa-user-plus mr-1"></i> 登录
+                                    </button>
+                                </div>
+                                <div className="-mr-2 flex items-center sm:hidden">
+                                    <button type="button" className="inline-flex items-center justify-center p-2 rounded-md text-neutral-600 hover:text-primary hover:bg-neutral-100 focus:outline-none" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+                                        <i className="fa fa-bars"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 移动端菜单 */}
+                    {isMenuOpen && (
+                        <div className="sm:hidden bg-white shadow-lg" id="mobile-menu">
+                            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                                <a href="#" className="bg-primary/10 text-primary block px-3 py-2 rounded-md text-base font-medium">首页</a>
+                                <a href="#" className="text-neutral-600 hover:bg-neutral-100 hover:text-neutral-800 block px-3 py-2 rounded-md text-base font-medium transition-custom">产品</a>
+                                <a href="#" className="text-neutral-600 hover:bg-neutral-100 hover:text-neutral-800 block px-3 py-2 rounded-md text-base font-medium transition-custom">文档</a>
+                                <a href="#" className="text-neutral-600 hover:bg-neutral-100 hover:text-neutral-800 block px-3 py-2 rounded-md text-base font-medium transition-custom">社区</a>
+                            </div>
+                            <div className="pt-4 pb-3 border-t border-neutral-200">
+                                <div className="flex items-center px-5">
+                                    <div className="flex-shrink-0">
+                                        <img className="h-10 w-10 rounded-full object-cover" src="https://picsum.photos/id/64/200/200" alt="用户头像" />
+                                    </div>
+                                    <div className="ml-3">
+                                        <div className="text-base font-medium text-neutral-800">未登录</div>
+                                        <div className="text-sm font-medium text-neutral-500">点击登录</div>
+                                    </div>
+                                </div>
+                                <div className="mt-3 px-2 space-y-1">
+                                    <a href="#" className="block px-3 py-2 rounded-md text-base font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-800 transition-custom">
+                                        <i className="fa fa-user-o mr-2"></i>个人中心
+                                    </a>
+                                    <a href="#" className="block px-3 py-2 rounded-md text-base font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-800 transition-custom">
+                                        <i className="fa fa-cog mr-2"></i>设置
+                                    </a>
+                                    <a href="#" className="block px-3 py-2 rounded-md text-base font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-800 transition-custom">
+                                        <i className="fa fa-sign-out mr-2"></i>退出
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </nav>
+            );
+        };
+
+        // 首页Hero组件
+        const HeroSection = () => {
+            return (
+                <section className="relative pt-32 pb-20 bg-gradient-to-br from-primary/90 to-primary overflow-hidden">
+                    <div className="absolute inset-0 overflow-hidden">
+                        <div className="absolute -right-10 -top-10 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
+                        <div className="absolute right-1/4 top-1/4 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
+                        <div className="absolute left-10 bottom-10 w-80 h-80 bg-white/10 rounded-full blur-3xl"></div>
+                    </div>
+                    
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                        <div className="text-center">
+                            <h1 className="text-[clamp(2.5rem,5vw,4rem)] font-bold text-white leading-tight text-shadow mb-6">
+                                打造卓越的数字化体验
+                            </h1>
+                            <p className="text-[clamp(1rem,2vw,1.25rem)] text-white/90 max-w-3xl mx-auto mb-8">
+                                我们提供创新的解决方案，帮助企业实现数字化转型，提升业务效率和用户体验
+                            </p>
+                            <div className="flex flex-col sm:flex-row justify-center gap-4">
+                                <button className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-primary bg-white hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white transition-custom shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                                    <i className="fa fa-rocket mr-2"></i>开始使用
+                                </button>
+                                <button className="inline-flex items-center justify-center px-6 py-3 border border-white text-base font-medium rounded-md text-white bg-transparent hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white transition-custom transform hover:-translate-y-1">
+                                    <i className="fa fa-play-circle-o mr-2"></i>观看演示
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 shadow-lg transform transition-all duration-300 hover:shadow-xl hover:-translate-y-2">
+                                <div className="text-white text-3xl mb-4">
+                                    <i className="fa fa-lightbulb-o"></i>
+                                </div>
+                                <h3 className="text-xl font-semibold text-white mb-2">创新解决方案</h3>
+                                <p className="text-white/80">我们提供前沿的技术解决方案，帮助企业突破传统限制，实现业务创新。</p>
+                            </div>
+                            
+                            <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 shadow-lg transform transition-all duration-300 hover:shadow-xl hover:-translate-y-2">
+                                <div className="text-white text-3xl mb-4">
+                                    <i className="fa fa-line-chart"></i>
+                                </div>
+                                <h3 className="text-xl font-semibold text-white mb-2">数据驱动决策</h3>
+                                <p className="text-white/80">通过分析关键数据指标，为您的业务提供精准决策支持，提升运营效率。</p>
+                            </div>
+                            
+                            <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 shadow-lg transform transition-all duration-300 hover:shadow-xl hover:-translate-y-2">
+                                <div className="text-white text-3xl mb-4">
+                                    <i className="fa fa-users"></i>
+                                </div>
+                                <h3 className="text-xl font-semibold text-white mb-2">用户体验设计</h3>
+                                <p className="text-white/80">专注于用户体验设计，打造直观、高效、愉悦的产品界面，提升用户满意度。</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+
+        // 特性展示组件
+        const FeaturesSection = () => {
+            return (
+                <section className="py-20 bg-white">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="text-center mb-16">
+                            <h2 className="text-[clamp(1.5rem,3vw,2.5rem)] font-bold text-neutral-800 mb-4">强大功能，简单使用</h2>
+                            <p className="text-neutral-600 max-w-3xl mx-auto">我们的平台提供了一系列强大功能，帮助您轻松管理和扩展业务，无需复杂技术知识</p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            <div className="bg-white rounded-xl shadow-md p-6 border border-neutral-200 transition-all duration-300 hover:shadow-lg hover:border-primary/30 group">
+                                <div className="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center mb-5 text-primary text-2xl group-hover:bg-primary group-hover:text-white transition-custom">
+                                    <i className="fa fa-tachometer"></i>
+                                </div>
+                                <h3 className="text-xl font-semibold text-neutral-800 mb-3">实时数据分析</h3>
+                                <p className="text-neutral-600">通过直观的仪表板，实时监控关键业务指标，做出数据驱动的决策。</p>
+                            </div>
+                            
+                            <div className="bg-white rounded-xl shadow-md p-6 border border-neutral-200 transition-all duration-300 hover:shadow-lg hover:border-primary/30 group">
+                                <div className="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center mb-5 text-primary text-2xl group-hover:bg-primary group-hover:text-white transition-custom">
+                                    <i className="fa fa-cogs"></i>
+                                </div>
+                                <h3 className="text-xl font-semibold text-neutral-800 mb-3">灵活配置</h3>
+                                <p className="text-neutral-600">根据您的业务需求，轻松自定义平台功能和工作流程，满足多样化场景。</p>
+                            </div>
+                            
+                            <div className="bg-white rounded-xl shadow-md p-6 border border-neutral-200 transition-all duration-300 hover:shadow-lg hover:border-primary/30 group">
+                                <div className="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center mb-5 text-primary text-2xl group-hover:bg-primary group-hover:text-white transition-custom">
+                                    <i className="fa fa-shield"></i>
+                                </div>
+                                <h3 className="text-xl font-semibold text-neutral-800 mb-3">企业级安全</h3>
+                                <p className="text-neutral-600">采用银行级别的安全措施，保障您的数据安全和隐私，符合严格合规标准。</p>
+                            </div>
+                            
+                            <div className="bg-white rounded-xl shadow-md p-6 border border-neutral-200 transition-all duration-300 hover:shadow-lg hover:border-primary/30 group">
+                                <div className="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center mb-5 text-primary text-2xl group-hover:bg-primary group-hover:text-white transition-custom">
+                                    <i className="fa fa-plug"></i>
+                                </div>
+                                <h3 className="text-xl font-semibold text-neutral-800 mb-3">丰富API</h3>
+                                <p className="text-neutral-600">提供全面的API文档和工具，轻松集成第三方服务，扩展平台功能。</p>
+                            </div>
+                            
+                            <div className="bg-white rounded-xl shadow-md p-6 border border-neutral-200 transition-all duration-300 hover:shadow-lg hover:border-primary/30 group">
+                                <div className="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center mb-5 text-primary text-2xl group-hover:bg-primary group-hover:text-white transition-custom">
+                                    <i className="fa fa-users"></i>
+                                </div>
+                                <h3 className="text-xl font-semibold text-neutral-800 mb-3">团队协作</h3>
+                                <p className="text-neutral-600">支持多用户协作和权限管理，提高团队工作效率，实现无缝沟通。</p>
+                            </div>
+                            
+                            <div className="bg-white rounded-xl shadow-md p-6 border border-neutral-200 transition-all duration-300 hover:shadow-lg hover:border-primary/30 group">
+                                <div className="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center mb-5 text-primary text-2xl group-hover:bg-primary group-hover:text-white transition-custom">
+                                    <i className="fa fa-life-ring"></i>
+                                </div>
+                                <h3 className="text-xl font-semibold text-neutral-800 mb-3">全天候支持</h3>
+                                <p className="text-neutral-600">提供24/7专业技术支持，确保您的业务不受影响，问题得到及时解决。</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+
+        // 产品展示组件
+        const ProductsSection = () => {
+            const products = [
+                {
+                    id: 1,
+                    name: "数据分析套件",
+                    description: "强大的数据分析工具，帮助您从复杂数据中获取有价值的洞察",
+                    image: "https://picsum.photos/id/180/600/400",
+                    features: ["实时数据可视化", "高级统计分析", "自定义报表"]
+                },
+                {
+                    id: 2,
+                    name: "用户管理系统",
+                    description: "全面的用户管理解决方案，简化用户注册、认证和权限管理",
+                    image: "https://picsum.photos/id/1/600/400",
+                    features: ["多因素认证", "角色权限管理", "用户行为分析"]
+                },
+                {
+                    id: 3,
+                    name: "工作流自动化",
+                    description: "智能工作流自动化平台，提高团队协作效率，减少重复劳动",
+                    image: "https://picsum.photos/id/3/600/400",
+                    features: ["拖放式设计器", "条件逻辑", "任务分配与跟踪"]
+                }
+            ];
+            
+            return (
+                <section className="py-20 bg-neutral-50">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="text-center mb-16">
+                            <h2 className="text-[clamp(1.5rem,3vw,2.5rem)] font-bold text-neutral-800 mb-4">我们的产品</h2>
+                            <p className="text-neutral-600 max-w-3xl mx-auto">探索我们的产品线，为您的业务选择最合适的解决方案</p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {products.map(product => (
+                                <div key={product.id} className="bg-white rounded-xl overflow-hidden shadow-md transition-all duration-300 hover:shadow-xl transform hover:-translate-y-2">
+                                    <img src={product.image} alt={product.name} className="w-full h-48 object-cover" />
+                                    <div className="p-6">
+                                        <h3 className="text-xl font-semibold text-neutral-800 mb-2">{product.name}</h3>
+                                        <p className="text-neutral-600 mb-4">{product.description}</p>
+                                        <ul className="mb-6">
+                                            {product.features.map(feature => (
+                                                <li key={feature} className="flex items-center text-neutral-600 mb-2">
+                                                    <i className="fa fa-check text-secondary mr-2"></i>
+                                                    {feature}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        <button className="w-full inline-flex items-center justify-center px-4 py-2 border border-primary text-base font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-custom">
+                                            了解更多
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+
+        // 客户评价组件
+        const TestimonialsSection = () => {
+            const testimonials = [
+                {
+                    id: 1,
+                    name: "张晓明",
+                    position: "技术总监",
+                    company: "ABC科技",
+                    avatar: "https://picsum.photos/id/1005/100/100",
+                    rating: 5,
+                    text: "这个平台彻底改变了我们团队的工作方式，数据可视化功能非常强大，帮助我们做出了许多关键决策。"
+                },
+                {
+                    id: 2,
+                    name: "李思思",
+                    position: "产品经理",
+                    company: "未来科技",
+                    avatar: "https://picsum.photos/id/1006/100/100",
+                    rating: 5,
+                    text: "用户管理系统非常完善，集成到我们的产品中非常简单，大大提高了我们的开发效率。"
+                },
+                {
+                    id: 3,
+                    name: "王建国",
+                    position: "CEO",
+                    company: "创新企业",
+                    avatar: "https://picsum.photos/id/1012/100/100",
+                    rating: 4,
+                    text: "工作流自动化功能让我们的业务流程更加顺畅，减少了很多手动操作，节省了大量时间。"
+                }
+            ];
+            
+            return (
+                <section className="py-20 bg-white">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="text-center mb-16">
+                            <h2 className="text-[clamp(1.5rem,3vw,2.5rem)] font-bold text-neutral-800 mb-4">客户评价</h2>
+                            <p className="text-neutral-600 max-w-3xl mx-auto">听听我们的客户如何评价我们的产品和服务</p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            {testimonials.map(testimonial => (
+                                <div key={testimonial.id} className="bg-white rounded-xl shadow-md p-6 border border-neutral-200 relative">
+                                    <div className="text-primary text-5xl absolute -top-5 left-6 opacity-20">
+                                        <i className="fa fa-quote-left"></i>
+                                    </div>
+                                    <div className="relative z-10">
+                                        <p className="text-neutral-600 mb-6 italic">{testimonial.text}</p>
+                                        <div className="flex items-center">
+                                            <img src={testimonial.avatar} alt={testimonial.name} className="w-12 h-12 rounded-full object-cover mr-4" />
+                                            <div>
+                                                <h4 className="font-semibold text-neutral-800">{testimonial.name}</h4>
+                                                <p className="text-neutral-500 text-sm">{testimonial.position} @ {testimonial.company}</p>
+                                            </div>
+                                        </div>
+                                        <div className="mt-4 text-primary">
+                                            {Array(testimonial.rating).fill().map((_, i) => (
+                                                <i key={i} className="fa fa-star"></i>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+
+        // 常见问题组件
+        const FaqSection = () => {
+            const faqs = [
+                {
+                    id: 1,
+                    question: "如何开始使用你们的平台？",
+                    answer: "注册账号后，您可以免费试用我们的基础功能。之后可以根据需要选择适合您业务的套餐进行升级。"
+                },
+                {
+                    id: 2,
+                    question: "你们的平台支持哪些数据来源？",
+                    answer: "我们支持多种数据来源，包括CSV文件导入、API集成、数据库连接等。您可以在文档中心查看详细的集成指南。"
+                },
+                {
+                    id: 3,
+                    question: "数据安全如何保障？",
+                    answer: "我们采用银行级别的加密技术保护您的数据，所有数据传输都使用SSL加密。我们也定期进行安全审计和渗透测试。"
+                },
+                {
+                    id: 4,
+                    question: "是否提供技术支持？",
+                    answer: "是的，我们提供全天候技术支持。付费客户可以享受优先响应和专属客户经理服务。"
+                },
+                {
+                    id: 5,
+                    question: "如何升级或降级我的套餐？",
+                    answer: "您可以随时在账户设置中更改您的套餐。升级会立即生效，降级则会在下一个计费周期生效。"
+                }
+            ];
+            
+            const [activeFaqId, setActiveFaqId] = React.useState(null);
+            
+            const toggleFaq = (id) => {
+                setActiveFaqId(activeFaqId === id ? null : id);
+            };
+            
+            return (
+                <section className="py-20 bg-neutral-50">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="text-center mb-16">
+                            <h2 className="text-[clamp(1.5rem,3vw,2.5rem)] font-bold text-neutral-800 mb-4">常见问题</h2>
+                            <p className="text-neutral-600 max-w-3xl mx-auto">以下是用户经常问到的问题，如果您有其他疑问，请联系我们的客服团队</p>
+                        </div>
+                        
+                        <div className="max-w-3xl mx-auto">
+                            {faqs.map(faq => (
+                                <div key={faq.id} className="mb-4 border border-neutral-200 rounded-lg overflow-hidden">
+                                    <button 
+                                        className="w-full flex items-center justify-between p-5 text-left font-medium text-neutral-800 hover:bg-neutral-50 focus:outline-none"
+                                        onClick={() => toggleFaq(faq.id)}
+                                    >
+                                        <span>{faq.question}</span>
+                                        <i className={`fa ${activeFaqId === faq.id ? 'fa-minus' : 'fa-plus'} text-primary transition-transform duration-300 ${activeFaqId === faq.id ? 'rotate-180' : ''}`}></i>
+                                    </button>
+                                    {activeFaqId === faq.id && (
+                                        <div className="px-5 pb-5 text-neutral-600 border-t border-neutral-200">
+                                            {faq.answer}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+
+        // 联系表单组件
+        const ContactSection = () => {
+            const [formData, setFormData] = React.useState({
+                name: '',
+                email: '',
+                subject: '',
+                message: ''
+            });
+            
+            const [isSubmitting, setIsSubmitting] = React.useState(false);
+            const [submitSuccess, setSubmitSuccess] = React.useState(false);
+            
+            const handleChange = (e) => {
+                setFormData({
+                    ...formData,
+                    [e.target.name]: e.target.value
+                });
+            };
+            
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                setIsSubmitting(true);
+                
+                // 模拟表单提交
+                setTimeout(() => {
+                    setIsSubmitting(false);
+                    setSubmitSuccess(true);
+                    setFormData({
+                        name: '',
+                        email: '',
+                        subject: '',
+                        message: ''
+                    });
+                }, 1500);
+            };
+            
+            return (
+                <section className="py-20 bg-white">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                            <div>
+                                <h2 className="text-[clamp(1.5rem,3vw,2.5rem)] font-bold text-neutral-800 mb-4">联系我们</h2>
+                                <p className="text-neutral-600 mb-8">有任何问题或建议？请填写表单与我们联系，我们会尽快回复您。</p>
+                                
+                                <div className="space-y-6">
+                                    <div className="flex items-start">
+                                        <div className="flex-shrink-0 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                                            <i className="fa fa-map-marker"></i>
+                                        </div>
+                                        <div className="ml-4">
+                                            <h3 className="text-lg font-medium text-neutral-800">公司地址</h3>
+                                            <p className="text-neutral-600">北京市海淀区中关村科技园区8号楼</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex items-start">
+                                        <div className="flex-shrink-0 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                                            <i className="fa fa-envelope"></i>
+                                        </div>
+                                        <div className="ml-4">
+                                            <h3 className="text-lg font-medium text-neutral-800">电子邮箱</h3>
+                                            <p className="text-neutral-600">contact@example.com</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex items-start">
+                                        <div className="flex-shrink-0 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                                            <i className="fa fa-phone"></i>
+                                        </div>
+                                        <div className="ml-4">
+                                            <h3 className="text-lg font-medium text-neutral-800">联系电话</h3>
+                                            <p className="text-neutral-600">+86 10 8888 8888</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div className="mt-8">
+                                    <h3 className="text-lg font-medium text-neutral-800 mb-4">关注我们</h3>
+                                    <div className="flex space-x-4">
+                                        <a href="#" className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-custom">
+                                            <i className="fa fa-weixin"></i>
+                                        </a>
+                                        <a href="#" className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-custom">
+                                            <i className="fa fa-weibo"></i>
+                                        </a>
+                                        <a href="#" className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-custom">
+                                            <i className="fa fa-linkedin"></i>
+                                        </a>
+                                        <a href="#" className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-custom">
+                                            <i className="fa fa-github"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-md p-8 border border-neutral-200">
+                                    {submitSuccess && (
+                                        <div className="mb-6 p-4 bg-secondary/10 border border-secondary/30 rounded-lg text-secondary">
+                                            <div className="flex">
+                                                <div className="flex-shrink-0">
+                                                    <i className="fa fa-check-circle"></i>
+                                                </div>
+                                                <div className="ml-3">
+                                                    <h3 className="text-sm font-medium">提交成功</h3>
+                                                    <div className="mt-2 text-sm">
+                                                        <p>感谢您的留言，我们会尽快与您联系。</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                    
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+                                        <div>
+                                            <label htmlFor="name" className="block text-sm font-medium text-neutral-700 mb-1">姓名</label>
+                                            <input 
+                                                type="text" 
+                                                id="name" 
+                                                name="name" 
+                                                value={formData.name} 
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                                                placeholder="请输入您的姓名"
+                                                required
+                                            />
+                                        </div>
+                                        
+                                        <div>
+                                            <label htmlFor="email" className="block text-sm font-medium text-neutral-700 mb-1">电子邮箱</label>
+                                            <input 
+                                                type="email" 
+                                                id="email" 
+                                                name="email" 
+                                                value={formData.email} 
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                                                placeholder="请输入您的电子邮箱"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="mb-6">
+                                        <label htmlFor="subject" className="block text-sm font-medium text-neutral-700 mb-1">主题</label>
+                                        <input 
+                                            type="text" 
+                                            id="subject" 
+                                            name="subject" 
+                                            value={formData.subject} 
+                                            onChange={handleChange}
+                                            className="w-full px-4 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                                            placeholder="请输入留言主题"
+                                            required
+                                        />
+                                    </div>
+                                    
+                                    <div className="mb-6">
+                                        <label htmlFor="message" className="block text-sm font-medium text-neutral-700 mb-1">留言内容</label>
+                                        <textarea 
+                                            id="message" 
+                                            name="message" 
+                                            rows="4" 
+                                            value={formData.message} 
+                                            onChange={handleChange}
+                                            className="w-full px-4 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                                            placeholder="请输入您的留言内容"
+                                            required
+                                        ></textarea>
+                                    </div>
+                                    
+                                    <button 
+                                        type="submit" 
+                                        className="w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-custom disabled:opacity-50 disabled:cursor-not-allowed"
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting ? (
+                                            <div className="flex items-center justify-center">
+                                                <i className="fa fa-circle-o-notch fa-spin mr-2"></i>
+                                                提交中...
+                                            </div>
+                                        ) : (
+                                            <i className="fa fa-paper-plane mr-2"></i>发送留言
+                                        )}
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+
+        // 页脚组件
+        const Footer = () => {
+            return (
+                <footer className="bg-neutral-800 text-white pt-16 pb-8">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+                            <div>
+                                <div className="flex items-center mb-6">
+                                    <i className="fa fa-cube text-primary text-2xl mr-2"></i>
+                                    <span className="font-bold text-xl">应用名称</span>
+                                </div>
+                                <p className="text-neutral-400 mb-6">
+                                    我们提供创新的数字化解决方案，帮助企业实现业务增长和转型。
+                                </p>
+                                <div className="flex space-x-4">
+                                    <a href="#" className="text-neutral-400 hover:text-white transition-custom">
+                                        <i className="fa fa-weixin"></i>
+                                    </a>
+                                    <a href="#" className="text-neutral-400 hover:text-white transition-custom">
+                                        <i className="fa fa-weibo"></i>
+                                    </a>
+                                    <a href="#" className="text-neutral-400 hover:text-white transition-custom">
+                                        <i className="fa fa-linkedin"></i>
+                                    </a>
+                                    <a href="#" className="text-neutral-400 hover:text-white transition-custom">
+                                        <i className="fa fa-github"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h3 className="text-lg font-semibold mb-6">产品</h3>
+                                <ul className="space-y-3">
+                                    <li><a href="#" className="text-neutral-400 hover:text-white transition-custom">数据分析套件</a></li>
+                                    <li><a href="#" className="text-neutral-400 hover:text-white transition-custom">用户管理系统</a></li>
+                                    <li><a href="#" className="text-neutral-400 hover:text-white transition-custom">工作流自动化</a></li>
+                                    <li><a href="#" className="text-neutral-400 hover:text-white transition-custom">API集成平台</a></li>
+                                    <li><a href="#" className="text-neutral-400 hover:text-white transition-custom">企业解决方案</a></li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h3 className="text-lg font-semibold mb-6">资源</h3>
+                                <ul className="space-y-3">
+                                    <li><a href="#" className="text-neutral-400 hover:text-white transition-custom">文档中心</a></li>
+                                    <li><a href="#" className="text-neutral-400 hover:text-white transition-custom">API参考</a></li>
+                                    <li><a href="#" className="text-neutral-400 hover:text-white transition-custom">开发指南</a></li>
+                                    <li><a href="#" className="text-neutral-400 hover:text-white transition-custom">博客</a></li>
+                                    <li><a href="#" className="text-neutral-400 hover:text-white transition-custom">社区</a></li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h3 className="text-lg font-semibold mb-6">公司</h3>
+                                <ul className="space-y-3">
+                                    <li><a href="#" className="text-neutral-400 hover:text-white transition-custom">关于我们</a></li>
+                                    <li><a href="#" className="text-neutral-400 hover:text-white transition-custom">联系我们</a></li>
+                                    <li><a href="#" className="text-neutral-400 hover:text-white transition-custom">加入我们</a></li>
+                                    <li><a href="#" className="text-neutral-400 hover:text-white transition-custom">隐私政策</a></li>
+                                    <li><a href="#" className="text-neutral-400 hover:text-white transition-custom">服务条款</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div className="border-t border-neutral-700 pt-8">
+                            <div className="flex flex-col md:flex-row justify-between items-center">
+                                <p className="text-neutral-400 text-sm">© 2025 应用名称. 保留所有权利.</p>
+                                <div className="mt-4 md:mt-0">
+                                    <a href="#" className="text-neutral-400 hover:text-white text-sm mr-4 transition-custom">隐私政策</a>
+                                    <a href="#" className="text-neutral-400 hover:text-white text-sm mr-4 transition-custom">服务条款</a>
+                                    <a href="#" className="text-neutral-400 hover:text-white text-sm transition-custom">Cookie政策</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </footer>
+            );
+        };
+
+        // 主应用组件
+        const App = () => {
+            React.useEffect(() => {
+                // 页面加载完成后隐藏加载指示器
+                setTimeout(() => {
+                    const loader = document.getElementById('loader');
+                    if (loader) {
+                        loader.style.opacity = '0';
+                        setTimeout(() => {
+                            loader.style.display = 'none';
+                        }, 300);
+                    }
+                }, 800);
+                
+                // 导航栏滚动效果
+                const navbar = document.getElementById('navbar');
+                if (navbar) {
+                    window.addEventListener('scroll', () => {
+                        if (window.scrollY > 100) {
+                            navbar.classList.add('bg-white/95', 'backdrop-blur-sm', 'shadow-lg');
+                            navbar.classList.remove('bg-white');
+                        } else {
+                            navbar.classList.remove('bg-white/95', 'backdrop-blur-sm', 'shadow-lg');
+                            navbar.classList.add('bg-white');
+                        }
+                    });
+                }
+            }, []);
+            
+            return (
+                <div className="min-h-screen flex flex-col">
+                    <Navbar />
+                    <main className="flex-grow">
+                        <HeroSection />
+                        <FeaturesSection />
+                        <ProductsSection />
+                        <TestimonialsSection />
+                        <FaqSection />
+                        <ContactSection />
+                    </main>
+                    <Footer />
+                </div>
+            );
+        };
+
+        // 等待DOM加载完成后渲染应用
+        document.addEventListener('DOMContentLoaded', function() {
+            // 使用Babel编译并执行代码
+            const script = document.createElement('script');
+            script.textContent = `
+                ReactDOM.render(
+                    React.createElement(App),
+                    document.getElementById('root')
+                );
+            `;
+            document.body.appendChild(script);
+        });
+    </script>
 </body>
 </html>
